@@ -1,16 +1,14 @@
+#pragma once
+
 /*
  PubSubClient.h - A simple client for MQTT.
   Nick O'Leary
   http://knolleary.net
 */
 
-#ifndef PubSubClient_h
-#define PubSubClient_h
-
 #include <Arduino.h>
 #include "IPAddress.h"
 #include "Client.h"
-#include "Stream.h"
 
 #define MQTT_VERSION_3_1      3
 #define MQTT_VERSION_3_1_1    4
@@ -21,20 +19,14 @@
 #define MQTT_VERSION MQTT_VERSION_3_1_1
 #endif
 
-// MQTT_MAX_PACKET_SIZE : Maximum packet size. Override with setBufferSize().
-#ifndef MQTT_MAX_PACKET_SIZE
-#define MQTT_MAX_PACKET_SIZE 256
-#endif
+// MQTT_MAX_PACKET_SIZE : Maximum packet size
+#define MQTT_MAX_PACKET_SIZE 128
 
-// MQTT_KEEPALIVE : keepAlive interval in Seconds. Override with setKeepAlive()
-#ifndef MQTT_KEEPALIVE
+// MQTT_KEEPALIVE : keepAlive interval in Seconds
 #define MQTT_KEEPALIVE 15
-#endif
 
-// MQTT_SOCKET_TIMEOUT: socket timeout interval in Seconds. Override with setSocketTimeout()
-#ifndef MQTT_SOCKET_TIMEOUT
+// MQTT_SOCKET_TIMEOUT: socket timeout interval in Seconds
 #define MQTT_SOCKET_TIMEOUT 15
-#endif
 
 // MQTT_MAX_TRANSFER_SIZE : limit how much data is passed to the network client
 //  in each write call. Needed for the Arduino Wifi Shield. Leave undefined to
@@ -83,20 +75,17 @@
 #define MQTT_CALLBACK_SIGNATURE void (*callback)(char*, uint8_t*, unsigned int)
 #endif
 
-#define CHECK_STRING_LENGTH(l,s) if (l+2+strnlen(s, this->bufferSize) > this->bufferSize) {_client->stop();return false;}
+#define CHECK_STRING_LENGTH(l,s) if (l+2+strnlen(s, MQTT_MAX_PACKET_SIZE) > MQTT_MAX_PACKET_SIZE) {_client->stop();return false;}
 
 class PubSubClient : public Print {
 private:
-   Client* _client;
-   uint8_t* buffer;
-   uint16_t bufferSize;
-   uint16_t keepAlive;
-   uint16_t socketTimeout;
-   uint16_t nextMsgId;
-   unsigned long lastOutActivity;
-   unsigned long lastInActivity;
-   bool pingOutstanding;
-   MQTT_CALLBACK_SIGNATURE;
+   Client* _client{};
+   uint8_t buffer[MQTT_MAX_PACKET_SIZE];
+   uint16_t nextMsgId{};
+   unsigned long lastOutActivity{};
+   unsigned long lastInActivity{};
+   bool pingOutstanding{};
+   MQTT_CALLBACK_SIGNATURE{};
    uint32_t readPacket(uint8_t*);
    boolean readByte(uint8_t * result);
    boolean readByte(uint8_t * result, uint16_t * index);
@@ -107,40 +96,18 @@ private:
    // Note: the header is built at the end of the first MQTT_MAX_HEADER_SIZE bytes, so will start
    //       (MQTT_MAX_HEADER_SIZE - <returned size>) bytes into the buffer
    size_t buildHeader(uint8_t header, uint8_t* buf, uint16_t length);
-   IPAddress ip;
-   const char* domain;
-   uint16_t port;
-   Stream* stream;
-   int _state;
+   IPAddress ip{};
+   const char* domain{};
+   uint16_t port{};
+   int _state = MQTT_DISCONNECTED;
 public:
    PubSubClient();
-   PubSubClient(Client& client);
-   PubSubClient(IPAddress, uint16_t, Client& client);
-   PubSubClient(IPAddress, uint16_t, Client& client, Stream&);
-   PubSubClient(IPAddress, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client);
-   PubSubClient(IPAddress, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client, Stream&);
-   PubSubClient(uint8_t *, uint16_t, Client& client);
-   PubSubClient(uint8_t *, uint16_t, Client& client, Stream&);
-   PubSubClient(uint8_t *, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client);
-   PubSubClient(uint8_t *, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client, Stream&);
-   PubSubClient(const char*, uint16_t, Client& client);
-   PubSubClient(const char*, uint16_t, Client& client, Stream&);
-   PubSubClient(const char*, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client);
-   PubSubClient(const char*, uint16_t, MQTT_CALLBACK_SIGNATURE,Client& client, Stream&);
-
-   ~PubSubClient();
 
    PubSubClient& setServer(IPAddress ip, uint16_t port);
    PubSubClient& setServer(uint8_t * ip, uint16_t port);
    PubSubClient& setServer(const char * domain, uint16_t port);
    PubSubClient& setCallback(MQTT_CALLBACK_SIGNATURE);
    PubSubClient& setClient(Client& client);
-   PubSubClient& setStream(Stream& stream);
-   PubSubClient& setKeepAlive(uint16_t keepAlive);
-   PubSubClient& setSocketTimeout(uint16_t timeout);
-
-   boolean setBufferSize(uint16_t size);
-   uint16_t getBufferSize();
 
    boolean connect(const char* id);
    boolean connect(const char* id, const char* user, const char* pass);
@@ -177,8 +144,5 @@ public:
    boolean loop();
    boolean connected();
    int state();
-
 };
 
-
-#endif
