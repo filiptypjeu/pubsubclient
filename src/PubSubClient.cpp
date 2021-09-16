@@ -7,7 +7,7 @@
 #include "PubSubClient.h"
 #include "Arduino.h"
 
-PubSubClient::PubSubClient() {}
+PubSubClient::PubSubClient(Client& client, const char *domain, uint16_t port) : _client(&client), domain(domain), port(port) {}
 
 boolean PubSubClient::connect(const char *id) {
     return connect(id,NULL,NULL,0,0,0,0,1);
@@ -29,15 +29,10 @@ boolean PubSubClient::connect(const char *id, const char *user, const char *pass
     if (!connected()) {
         int result = 0;
 
-
         if(_client->connected()) {
             result = 1;
         } else {
-            if (domain != NULL) {
-                result = _client->connect(this->domain, this->port);
-            } else {
-                result = _client->connect(this->ip, this->port);
-            }
+            result = _client->connect(this->domain, this->port);
         }
 
         if (result == 1) {
@@ -397,7 +392,6 @@ size_t PubSubClient::buildHeader(uint8_t header, uint8_t* buf, uint16_t length) 
     uint8_t pos = 0;
     uint16_t len = length;
     do {
-
         digit = len  & 127; //digit = len %128
         len >>= 7; //len = len / 128
         if (len > 0) {
@@ -518,49 +512,21 @@ uint16_t PubSubClient::writeString(const char* string, uint8_t* buf, uint16_t po
 
 
 boolean PubSubClient::connected() {
-    boolean rc;
-    if (_client == NULL ) {
-        rc = false;
-    } else {
-        rc = (int)_client->connected();
-        if (!rc) {
-            if (this->_state == MQTT_CONNECTED) {
-                this->_state = MQTT_CONNECTION_LOST;
-                _client->flush();
-                _client->stop();
-            }
-        } else {
-            return this->_state == MQTT_CONNECTED;
+    boolean rc = (int)_client->connected();
+    if (!rc) {
+        if (this->_state == MQTT_CONNECTED) {
+            this->_state = MQTT_CONNECTION_LOST;
+            _client->flush();
+            _client->stop();
         }
+    } else {
+        return this->_state == MQTT_CONNECTED;
     }
     return rc;
 }
 
-PubSubClient& PubSubClient::setServer(uint8_t * ip, uint16_t port) {
-    IPAddress addr(ip[0],ip[1],ip[2],ip[3]);
-    return this->setServer(addr,port);
-}
-
-PubSubClient& PubSubClient::setServer(IPAddress ip, uint16_t port) {
-    this->ip = ip;
-    this->port = port;
-    this->domain = NULL;
-    return *this;
-}
-
-PubSubClient& PubSubClient::setServer(const char * domain, uint16_t port) {
-    this->domain = domain;
-    this->port = port;
-    return *this;
-}
-
 PubSubClient& PubSubClient::setCallback(MQTT_CALLBACK_SIGNATURE) {
     this->callback = callback;
-    return *this;
-}
-
-PubSubClient& PubSubClient::setClient(Client& client){
-    this->_client = &client;
     return *this;
 }
 

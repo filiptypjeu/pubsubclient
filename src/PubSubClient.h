@@ -7,7 +7,6 @@
 */
 
 #include <Arduino.h>
-#include "IPAddress.h"
 #include "Client.h"
 
 #define MQTT_VERSION_3_1      3
@@ -41,6 +40,7 @@
 //#define MQTT_MAX_TRANSFER_SIZE 80
 
 // Possible values for client.state()
+#define MQTT_NOT_CONNECTED          -5
 #define MQTT_CONNECTION_TIMEOUT     -4
 #define MQTT_CONNECTION_LOST        -3
 #define MQTT_CONNECT_FAILED         -2
@@ -103,18 +103,13 @@ private:
    // Note: the header is built at the end of the first MQTT_MAX_HEADER_SIZE bytes, so will start
    //       (MQTT_MAX_HEADER_SIZE - <returned size>) bytes into the buffer
    size_t buildHeader(uint8_t header, uint8_t* buf, uint16_t length);
-   IPAddress ip{};
    const char* domain{};
    uint16_t port{};
-   int _state = MQTT_DISCONNECTED;
+   int _state = MQTT_NOT_CONNECTED;
 public:
-   PubSubClient();
+   PubSubClient(Client& client, const char *domain, uint16_t port);
 
-   PubSubClient& setServer(IPAddress ip, uint16_t port);
-   PubSubClient& setServer(uint8_t * ip, uint16_t port);
-   PubSubClient& setServer(const char * domain, uint16_t port);
    PubSubClient& setCallback(MQTT_CALLBACK_SIGNATURE);
-   PubSubClient& setClient(Client& client);
 
    boolean connect(const char* id);
    boolean connect(const char* id, const char* user, const char* pass);
