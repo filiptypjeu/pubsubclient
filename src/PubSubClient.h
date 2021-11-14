@@ -87,7 +87,7 @@
 class PubSubClient : public Print {
 private:
    Client* _client{};
-   uint8_t buffer[MQTT_MAX_PACKET_SIZE];
+   uint8_t buffer[MQTT_MAX_PACKET_SIZE + 1]; // One extra byte to make sure one can turn the buffer into a c-string
    uint16_t nextMsgId{};
    unsigned long lastOutActivity{};
    unsigned long lastInActivity{};
